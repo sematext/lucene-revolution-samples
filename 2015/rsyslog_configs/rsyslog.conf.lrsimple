@@ -1,0 +1,47 @@
+module(load="imfile")
+module(load="omprog")
+
+input(type="imfile"
+      File="/opt/logs/example.log"
+      Tag="tag1"
+      stateFile="/tmp/rsyslog-state")
+
+template(name="json_lines" type="list" option.json="on") {
+  constant(value="{")
+  constant(value="\"timestamp\":\"")
+  property(name="timereported" dateFormat="rfc3339")
+  constant(value="\",\"message\":\"")
+  property(name="msg")
+  constant(value="\",\"host\":\"")
+  property(name="hostname")
+  constant(value="\",\"severity\":\"")
+  property(name="syslogseverity-text")
+  constant(value="\",\"facility\":\"")
+  property(name="syslogfacility-text")
+  constant(value="\",\"syslog-tag\":\"")
+  property(name="syslogtag")
+  constant(value="\"}\n")
+}
+
+main_queue(
+  queue.workerthreads="4"  # threads to work on the queue
+  queue.workerthreadminimummessages="1"
+  queue.filename="solr_action"     # write to disk if needed (disk-assisted)
+  queue.maxfilesize="100m"        # max size per single queue file
+  queue.spoolDirectory="/opt/rsyslog/queues" # where to write queue files
+  queue.maxdiskspace="5g"         # up to 5g to be written on disk
+
+  queue.highwatermark="100000"   # start writing to disk when this many messages are stored in memory
+  queue.lowwatermark="50000"    # when writing to disk reduced the in-memory queue to this much, stop spilling to disk
+
+  queue.dequeueBatchSize="500"  # max number of messages to process at once
+  queue.size="10000000"          # absolute max queue size (should never be reached)
+
+  queue.saveonshutdown="on"    # write queue contents to disk on shutdown
+)
+
+action(
+  type="omprog"
+  binary="/opt/rsyslog/rsyslog_solr.py"
+  template="json_lines"
+)
