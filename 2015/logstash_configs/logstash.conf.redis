@@ -1,0 +1,15 @@
+input {
+  redis {
+    data_type => "channel"
+    key => "rsyslog_logstash"
+    batch_count => 100
+  }
+}
+
+output {
+  solr_http {
+    solr_url => "http://localhost:8983/solr/gettingstarted"
+    flush_size => 5000
+    workers => 4
+  }
+}
