@@ -1,0 +1,15 @@
+input {
+  file {
+    path => "/opt/logs/example.log.parsed"
+    start_position => "beginning"
+    codec => "json_lines"
+  }
+}
+
+output {
+  solr_http {
+    solr_url => "http://localhost:8983/solr/gettingstarted"
+    flush_size => 5000
+    workers => 4
+  }
+}

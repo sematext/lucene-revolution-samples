@@ -1,0 +1,36 @@
+module(load="imfile")
+module(load="omhiredis")
+module(load="mmnormalize")
+
+input(type="imfile"
+      File="/opt/logs/example*smaller"
+      Tag="tag1"
+)
+
+action(type="mmnormalize"
+  rulebase="/opt/rsyslog/multiple_rules.rb"
+)
+
+if $!root <> "" then {
+  set $.final-json = $!root;
+} else {
+  set $.final-json = $!all-json;
+}
+
+template(name="json_lines" type="list") {
+  property(name="$.final-json")
+  constant(value="\n")
+}
+
+main_queue(
+  queue.workerthreads="1"  # threads to work on the queue
+  queue.dequeueBatchSize="100"  # max number of messages to process at once
+  queue.size="10000"          # absolute max queue size (should never be reached)
+)
+
+action(
+  type="omhiredis"
+  mode="publish"
+  key="rsyslog_logstash"
+  template="json_lines"
+)

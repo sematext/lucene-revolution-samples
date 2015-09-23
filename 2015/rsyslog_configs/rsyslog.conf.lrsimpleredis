@@ -1,0 +1,37 @@
+module(load="imfile")
+module(load="omhiredis")
+
+input(type="imfile"
+      File="/opt/logs/example.log"
+      Tag="tag1"
+      stateFile="/tmp/rsyslog-state")
+
+template(name="json_lines" type="list" option.json="on") {
+  constant(value="{")
+  constant(value="\"timestamp\":\"")
+  property(name="timereported" dateFormat="rfc3339")
+  constant(value="\",\"message\":\"")
+  property(name="msg")
+  constant(value="\",\"host\":\"")
+  property(name="hostname")
+  constant(value="\",\"severity\":\"")
+  property(name="syslogseverity-text")
+  constant(value="\",\"facility\":\"")
+  property(name="syslogfacility-text")
+  constant(value="\",\"syslog-tag\":\"")
+  property(name="syslogtag")
+  constant(value="\"}\n")
+}
+
+main_queue(
+  queue.workerthreads="1"  # threads to work on the queue
+  queue.dequeueBatchSize="100"  # max number of messages to process at once
+  queue.size="10000"          # absolute max queue size (should never be reached)
+)
+
+action(
+  type="omhiredis"
+  mode="publish"
+  key="rsyslog_logstash"
+  template="json_lines"
+)
