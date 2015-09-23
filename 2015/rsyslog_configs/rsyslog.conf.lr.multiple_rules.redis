@@ -25,7 +25,7 @@ template(name="json_lines" type="list") {
 main_queue(
   queue.workerthreads="1"  # threads to work on the queue
   queue.dequeueBatchSize="100"  # max number of messages to process at once
-  queue.size="10000"          # absolute max queue size (should never be reached)
+  queue.size="10000"          # max queue size
 )
 
 action(
