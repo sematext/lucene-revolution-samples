@@ -18,7 +18,7 @@ docker stop CONTAINER_NAME
 
 docker run --name lr_single_solr -d -p 8983:8983 -t solr:6.2.1
 
-docker run --name lr_single_solr_latest -d -p 8983:8983 -t solr:6.2.1
+docker run --name lr_single_solr_latest -d -p 8983:8983 -t solr:latest
 
 # stop and remove the container
 
@@ -48,6 +48,8 @@ grep '^SOLR_HEAP=' /opt/solr/bin/solr.in.sh
 
 docker run --name lr_solr_heap -p 8983:8983 -d -P -v $PWD/lr-set-heap.sh:/docker-entrypoint-initdb.d/lr-set-heap.sh solr:6.2.1
 
+# show logs
+
 docker logs lr_solr_heap
 
 docker stop lr_solr_heap
@@ -71,14 +73,6 @@ docker run --name lr_single_solr -d -p 8983:8983 -t solr:6.2.1
 docker exec -it --user solr lr_single_solr bin/solr create_core -c gettingstarted
 
 docker logs lr_single_solr
-
-### Index some documents
-
-docker exec -it --user solr lr_single_solr bin/post -c gettingstarted example/exampledocs/*.xml
-
-docker logs lr_single_solr
-
-curl 'localhost:8983/solr/gettingstarted/select?q=*:*&indent=true'
 
 ### Create a collection
 
@@ -145,16 +139,14 @@ docker rm lr_solr_disk
 
 docker run --name lr_solr_disk -d -p 8983:8983 -t -v /tmp/solr:/opt/solr/server/solr solr:6.2.1
 
-docker exec -it --user=solr lr_solr_disk bin/solr create_core -c gettingstarted
-
 docker stop lr_solr_disk
 docker rm lr_solr_disk
 
 ### And storage only volumes usage
 
-docker create --name solr_lr_volume -v /Users/gro/Solry/temp/:/opt/solr/server/solr/ solr /bin/true
+docker create --name solr_lr_volume -v /tmp/solr:/opt/solr/server/solr/ solr /bin/true
 
-docker volume inspect solr_lr_volume
+docker start solr_lr_volume
 
 docker run --name lr_solr_with_volume --volumes-from solr_lr_volume -d -p 8983:8983 -t solr:6.2.1
 
@@ -182,3 +174,40 @@ services:
       - "3888:3888"
 
 docker-compose up
+
+version: "2"
+services:
+  solr1:
+    image: solr:6.2.1
+    ports:
+      - "8983:8983"
+    links:
+      - zookeeper
+    command: bash -c '/opt/solr/bin/solr start -f -z zookeeper:2181'
+  solr2:
+    image: solr:6.2.1
+    links:
+      - zookeeper
+      - solr1
+    command: bash -c '/opt/solr/bin/solr start -f -z zookeeper:2181'
+  solr3:
+    image: solr:6.2.1
+    links:
+      - zookeeper
+      - solr1
+      - solr2
+    command: bash -c '/opt/solr/bin/solr start -f -z zookeeper:2181'
+  solr4:
+    image: solr:6.2.1
+    links:
+      - zookeeper
+      - solr1
+      - solr2
+      - solr3
+    command: bash -c '/opt/solr/bin/solr start -f -z zookeeper:2181'
+  zookeeper:
+    image: jplock/zookeeper:3.4.8
+    ports:
+      - "2181:2181"
+      - "2888:2888"
+      - "3888:3888"
