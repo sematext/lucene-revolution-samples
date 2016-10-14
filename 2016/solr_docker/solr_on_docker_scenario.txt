@@ -144,16 +144,14 @@ docker rm lr_solr_disk
 
 ### And storage only volumes usage
 
-docker create --name solr_lr_volume -v /tmp/solr:/opt/solr/server/solr/ solr /bin/true
+docker create -v /opt/solr --name solr_lr_volume solr:6.2.1
 
-docker start solr_lr_volume
+docker volume inspect solr_lr_volume
 
 docker run --name lr_solr_with_volume --volumes-from solr_lr_volume -d -p 8983:8983 -t solr:6.2.1
 
 docker stop lr_solr_with_volume
-docker stop solr_volume
 docker volume rm solr_lr_volume
-docker rm solr_lr_volume
 
 ### And now, compose
 
