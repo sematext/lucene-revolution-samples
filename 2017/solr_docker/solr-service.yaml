@@ -1,0 +1,18 @@
+# TODO: see what can be REMOVED first
+
+apiVersion: v1
+kind: Service
+metadata:
+  name: solr-service
+  namespace: default
+  labels:
+    app: solr-service
+spec:
+  type: NodePort
+  ports:
+  - name: solr
+    port: 8983
+    targetPort: 8983
+    protocol: TCP
+  selector:
+    app: solr-app

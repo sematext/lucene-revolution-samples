@@ -1,0 +1,16 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: zookeeper-service
+  namespace: default
+  labels:
+    app: zookeeper-service
+spec:
+  type: NodePort
+  ports:
+  - name: zookeeper
+    port: 2181
+    targetPort: 2181
+    protocol: TCP
+  selector:
+    app: zookeeper-app
