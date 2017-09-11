@@ -1,0 +1,36 @@
+minikube start
+
+kubectl create -f zookeeper-controler.yaml
+kubectl create -f zookeeper-service.yaml
+kubectl get pods
+kubectl get services
+
+ZK_HOST=`minikube ip`
+ZK_PORT=   <--- from services
+
+/opt/solr-6.5.1/bin/solr zk upconfig -d /opt/solr-6.5.1/server/solr/configsets/data_driven_schema_configs/ -n test -z $ZK_HOST:$ZK_PORT
+
+kubectl create -f solr-controller.yaml
+kubectl create -f solr-service.yaml
+kubectl get services
+kubectl get pods
+
+SOLR_HOST=`minikube ip`
+SOLR_PORT=  <--- from services
+
+--> go to Solr
+
+kubectl scale --replicas=2 replicationcontrollers solr-controller
+kubectl get pods
+
+
+curl "$SOLR_HOST:$SOLR_PORT/solr/admin/collections?action=CREATE&name=test2&numShards=2&collection.configName=test"
+
+curl -X POST -H 'Content-Type: application/json' "$SOLR_HOST:$SOLR_PORT/solr/test2/update/json/docs" --data-binary '
+{
+  "title": "Doc"
+}'
+
+curl $SOLR_HOST:$SOLR_PORT/solr/test2/update?commit=true
+
+--> check docs in Solr
